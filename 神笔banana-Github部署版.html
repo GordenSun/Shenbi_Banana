@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>神笔banana</title>
+  <style>
+    :root{
+      --banana:#FFD93D; --cream:#F6F1E9; --orange:#FF9A00; --cocoa:#4F200D;
+      --text:var(--cocoa);
+      --muted: rgba(79,32,13,.72);
+      --line: rgba(79,32,13,.18);
+      --panel: #fff;
+      --ok:#2e7d32; --err:#c62828; --warn:#b26800; --info:#2b4b6f;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;color:var(--text);
+      background:
+        radial-gradient(40% 30% at 20% 10%, rgba(255,217,61,.25), transparent 60%),
+        radial-gradient(35% 25% at 85% 0%, rgba(255,154,0,.15), transparent 60%),
+        linear-gradient(180deg,#FFF9E8 0%, var(--cream) 100%);
+      font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto
+    }
+    header{
+      padding:20px 16px 16px;border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg,#FFF6D3,#FFEAA0);
+    }
+    h1{ margin:0 0 12px 0;font-size:28px;letter-spacing:.3px;color:#2e180c; }
+    .author-bar{
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+      background:linear-gradient(90deg,rgba(255,217,61,.35),rgba(255,154,0,.25));
+      border:1px solid rgba(255,154,0,.45);
+      padding:10px 12px;border-radius:16px
+    }
+    .author-item{display:flex;align-items:center;gap:6px;font-size:14px}
+    .badge{padding:6px 10px;border-radius:999px;border:1px solid rgba(79,32,13,.18);background:#fff7d8;font-weight:700;color:#2e180c}
+    .highlight{color:#7a3a00;font-weight:800}
+    .xbrand{color:#b34f00;font-weight:800}
+    .spacer{flex:1}
+    main{max-width:1100px;margin:20px auto;padding:0 12px 60px}
+    .steps{display:grid;grid-template-columns:1fr;gap:16px}
+    .step{
+      background:var(--panel);
+      border:1px solid var(--line);
+      padding:16px;border-radius:16px;
+      box-shadow:0 6px 30px rgba(79,32,13,.08)
+    }
+    .step-title{display:flex;align-items:center;gap:12px;margin:0 0 12px 0}
+    .num{
+      width:32px;height:32px;border-radius:50%;
+      display:inline-flex;align-items:center;justify-content:center;
+      background:var(--banana); color:var(--cocoa);
+      border:1px solid rgba(79,32,13,.25); font-weight:800
+    }
+    .title-text{font-size:16px;font-weight:800}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+    input[type="text"]{
+      width:100%;height:44px;padding:0 12px;border-radius:12px;
+      background:#fff;border:1px solid var(--line);color:var(--text);outline:none;line-height:44px
+    }
+    textarea{
+      width:100%;min-height:120px;resize:vertical;padding:12px;border-radius:12px;
+      background:#fff;border:1px solid var(--line);color:var(--text)
+    }
+    .drop{
+      border:2px dashed rgba(255,154,0,.6); background:#FFF8E8;
+      border-radius:14px;padding:16px;text-align:center;color:var(--muted)
+    }
+    .drop:hover{background:#FFF3D1}
+    .help{margin-top:8px;color:var(--muted);font-size:12px}
+    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:10px}
+    .thumb{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+    .thumb img{display:block;width:100%;height:100%;object-fit:cover}
+    .thumb .x{position:absolute;top:6px;right:6px;background:#FFF1D0;border:1px solid rgba(79,32,13,.25);border-radius:999px;color:#7a3a00;cursor:pointer;font-size:12px;padding:4px 6px}
+    .actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;
+      border:1px solid var(--orange);
+      background:linear-gradient(180deg,#FFE072,#FFC02E);
+      color:#41210f;padding:0 18px;height:44px;border-radius:12px;cursor:pointer;transition:.15s;white-space:nowrap;font-weight:800
+    }
+    .btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(255,154,0,.25)}
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .btn.primary{background:linear-gradient(180deg,#FFC23D,#FF9A00)}
+    .status{display:flex;align-items:center;gap:10px}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(79,32,13,.2);
+      background:#fff; padding:6px 12px;border-radius:999px;font-size:12px;color:var(--muted);min-height:32px
+    }
+    .spin{width:18px;height:18px;border:2px solid rgba(255,217,61,.45);border-top-color:var(--orange);border-radius:50%;animation:rot 1s linear infinite;display:none}
+    .spin.show{display:inline-block}
+    @keyframes rot{to{transform:rotate(360deg)}}
+    details{margin:0}
+    summary.summary{list-style:none;cursor:pointer;font-weight:800;color:#7a3a00}
+    summary::-webkit-details-marker{display:none}
+    .summary::before{content:'▶';display:inline-block;margin-right:6px;transform:translateY(-1px);color:#7a3a00}
+    details[open] .summary::before{content:'▼'}
+    .krow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+
+    /* Results & Logs split */
+    .split{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px;align-items:start}
+    @media (max-width: 900px){ .split{grid-template-columns:1fr} }
+
+    .gallery{display:grid;grid-template-columns:1fr;gap:16px}
+    .run-card{background:#fff;border:1px solid var(--line);padding:12px;border-radius:16px;box-shadow:0 6px 18px rgba(79,32,13,.08)}
+    .run-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;color:#6b3b15}
+    .run-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+    .shot{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;cursor:pointer}
+    .shot img{display:block;width:100%;height:auto}
+    .shot .bar{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:8px;border-top:1px solid var(--line)}
+
+    .log-card{background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:16px;box-shadow:0 6px 18px rgba(79,32,13,.08)}
+    .log-title{font-weight:800;margin:0 0 10px 0}
+    .log-list{background:#FFF7E1;border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:520px}
+    .log-item{display:grid;grid-template-columns:1.4em 1fr;gap:10px;padding:10px;align-items:start;border-top:1px solid rgba(79,32,13,.15)}
+    .log-item:first-child{border-top:none}
+    .log-ico{font-weight:900;font-size:18px;line-height:1;text-align:center;margin-top:2px}
+    .ico-ok{color:var(--ok)} .ico-err{color:var(--err)} .ico-warn{color:var(--warn)} .ico-info{color:var(--info)}
+    .log-text{white-space:pre-wrap;word-break:break-word}
+    .small{font-size:12px;color:#6b3b15}
+
+    footer{padding:16px;border-top:1px solid var(--line);color:#6b3b15}
+    .copy{height:28px;padding:0 10px;border-radius:10px}
+
+    /* Lightbox */
+    .lightbox{position:fixed;inset:0;background:rgba(79,32,13,.72);display:none;align-items:center;justify-content:center;z-index:50}
+    .lightbox.show{display:flex}
+    .lb-inner{position:relative;max-width:92vw;max-height:86vh;background:#FFF8E8;border:1px solid var(--line);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:10px}
+    .lb-main{flex:1;display:flex;align-items:center;justify-content:center;min-width:60vw;min-height:50vh}
+    .lb-main img{max-width:100%;max-height:100%}
+    .lb-bar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .navbtn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--orange);background:#FFE389;color:#4F200D;cursor:pointer;font-weight:800}
+    .closebtn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 12px;border-radius:10px;border:1px solid rgba(79,32,13,.3);background:#fff;color:#4F200D;cursor:pointer}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>神笔banana [一键启动、无需翻墙]</h1>
+    <div class="author-bar">
+      <span class="author-item badge">作者：<span class="highlight">Gorden Sun</span></span>
+      <span class="author-item">微信：<span id="wx" class="highlight">duge360</span> <button class="btn copy" id="copyWx">复制</button></span>
+      <span class="author-item">公众号：<span class="highlight">AI加速派</span></span>
+      <span class="author-item">X：<span class="xbrand">Gorden Sun</span></span>
+      <span class="spacer"></span>
+    </div>
+  </header>
+  <main>
+    <section class="steps">
+      <!-- Step 1 -->
+      <div class="step">
+        <div class="step-title"><span class="num">1</span><div class="title-text">第1步：输入提示词（必填）</div></div>
+        <textarea id="prompt" placeholder="请输入提示词，中文英文都可以，AI会按你的要求修改或生成图片"></textarea>
+      </div>
+      <!-- Step 2 -->
+      <div class="step">
+        <div class="step-title"><span class="num">2</span><div class="title-text">第2步：上传图片（选填）</div></div>
+        <div id="drop" class="drop">
+          <div>拖拽图片到这里，或 <label style="text-decoration:underline;cursor:pointer"><input id="file" type="file" accept="image/*" multiple hidden>选择文件</label></div>
+        </div>
+        <div class="help">上传参考图片或要编辑的图片（0~8张）</div>
+        <div id="thumbs" class="thumbs"></div>
+      </div>
+      <!-- Step 3 -->
+      <div class="step">
+        <div class="step-title"><span class="num">3</span><div class="title-text">第3步：输入Key（必填）</div></div>
+        <details id="keyDetails" open>
+          <summary class="summary">展开/收起</summary>
+          <div class="krow">
+            <input id="userKey" type="text" placeholder="sk-or-...（填写后将固定使用你的Key）">
+            
+            <button class="btn" id="saveKey">保存Key到本地</button>
+<!-- 放在第3步“保存Key到本地”按钮旁边 -->
+<button class="btn warn" id="clearKey">清除本地Key</button>
+
+<script>
+  // 放在元素之后，或用 DOMContentLoaded 包一层
+  document.addEventListener('DOMContentLoaded', function(){
+    var btn = document.getElementById('clearKey');
+    if (!btn) return;
+
+    btn.onclick = function () {
+      try { localStorage.removeItem('nb:key'); } catch (e) {}
+      var inp = document.getElementById('userKey');
+      if (inp) inp.value = '';
+
+      // 安全调用：如果页面里定义了 toast（且挂在 window 上）就用它；否则退化提示
+      if (typeof window.toast === 'function') {
+        window.toast('已清除本地 Key');
+      } else if (typeof alert === 'function') {
+        alert('已清除本地 Key');
+      } else {
+        console.log('已清除本地 Key');
+      }
+    };
+  });
+</script>
+            <span class="muted small">必须填写你自己的 Key 才能使用。</span>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="actions">
+      <div class="left">
+        <button class="btn primary" id="go">🚀 生成图片</button>
+      </div>
+      <div class="status">
+        <span id="spin" class="spin"></span>
+        <span class="pill" id="status">就绪</span>
+      </div>
+    </section>
+
+    <!-- Split layout: Gallery (left) + Logs (right) -->
+    <section class="split">
+      <div>
+        <section class="gallery" id="runs"></section>
+      </div>
+      <aside class="log-card" id="logPanel" style="display:none">
+        <div class="log-title">日志</div>
+        <div id="logList" class="log-list"></div>
+      </aside>
+    </section>
+  </main>
+  <footer>
+    <div>© 2025 Gorden Sun · nano banana</div>
+  </footer>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true">
+    <div class="lb-inner">
+      <div class="lb-main"><img id="lbImg" alt="preview"></div>
+      <div class="lb-bar">
+        <div class="muted small" id="lbCaption"></div>
+        <div style="display:flex;gap:8px">
+          <a class="navbtn" id="lbDownload" download="nano-banana.png" href="#">下载PNG</a>
+          <button class="navbtn" id="lbPrev">← 上一张</button>
+          <button class="navbtn" id="lbNext">下一张 →</button>
+          <button class="closebtn" id="lbClose">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+;(() => {
+  // 提取文本中的图片URL（支持 Markdown 和裸链接），不处理 base64
+  function parseImageUrlsFromText(txt){
+    if(!txt) return [];
+    const urls = [];
+    // Markdown: ![alt](url)
+    const md = /!\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/ig; let m;
+    while ((m = md.exec(txt))) urls.push(m[1]);
+    // 裸链接 http(s)://...... 直到空白或右括号/引号
+    const reUrl = /(https?:\/\/[^\s\)\]\}<'"]+)/ig; let m2;
+    while ((m2 = reUrl.exec(txt))) urls.push(m2[1]);
+    // 去重
+    return Array.from(new Set(urls));
+  }
+
+  // ====== 内置加密Key区（已混淆，100条，单文件嵌入） ======
+  const _p = ["nano-","banana","🟡2025-09-01","🍌","XiGordenSun@duge360-","公号","AI加速派"].join("");
+    // removed per fixed-key switch
+  const MODEL = "gemini-2.5-flash-image";
+  const ENDPOINT = 'https://oaiapi.asia/v1/chat/completions';
+
+  async function deobf(entry) {
+    const parts = entry.split('.'); const saltHex = parts[0]; const b64 = parts[1]; const chk = parts[2];
+    const cipher = base64UrlToBytes(b64);
+    const mask = await sha256Bytes(strToBytes(_p + saltHex));
+    const plain = xorBytes(cipher, mask);
+    const sum = (await sha1Hex(plain)).slice(0,8);
+    if (chk && chk !== sum) throw new Error('checksum mismatch');
+    return new TextDecoder().decode(plain);
+  }
+
+  var FIXED_KEY = '';
+function pickKey() {
+  const inp = document.getElementById('userKey');
+  const v = inp && inp.value ? inp.value.trim() : '';
+  if (!v) throw new Error('NO_KEY');
+  return v;
+}
+
+
+  // ====== UI变量 ======
+  function el(id){ return document.getElementById(id) }
+  var promptEl = el('prompt'), fileEl = el('file'), dropEl = el('drop'), thumbsEl = el('thumbs');
+  var runsEl = el('runs');
+  var statusEl = el('status'), spinEl = el('spin');
+  var goBtn = el('go');
+  var userKeyEl = el('userKey'), useMineEl = el('useMine'), saveKeyBtn = el('saveKey');
+  var copyWxBtn = el('copyWx');
+  var lightbox = el('lightbox'), lbImg = el('lbImg'), lbCaption = el('lbCaption'), lbPrev = el('lbPrev'), lbNext = el('lbNext'), lbClose = el('lbClose'), lbDownload = el('lbDownload');
+
+  // ---- Added: direct download from lightbox toolbar ----
+  lbDownload.onclick = function(e){
+    if(e) e.preventDefault();
+    var pos = fromGlobalIndex(gIndex);
+    if (!pos || pos.run < 0) return;
+    var run = runs[pos.run];
+    var url = run.images[pos.idx];
+    downloadImage(url, 'nano-banana-' + (pos.run+1) + '-' + (pos.idx+1) + '.png');
+  };
+  // ---- /Added ----
+
+  var logListEl = el('logList'), logPanel = el('logPanel');
+
+  // 复制微信号
+  copyWxBtn.onclick = function(){
+    var text = el('wx').textContent || 'duge360';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ toast('已复制微信号') }).catch(function(){ legacyCopy(text) });
+    } else { legacyCopy(text) }
+    function legacyCopy(t){ var input = document.createElement('input'); input.value=t; document.body.appendChild(input); input.select(); try{document.execCommand('copy'); toast('已复制微信号')}catch(e){toast('复制失败',true)}; document.body.removeChild(input) }
+  };
+
+  // 本地存储恢复
+  userKeyEl.value = localStorage.getItem('nb:key') || '';
+  saveKeyBtn.onclick = function(){ localStorage.setItem('nb:key', (userKeyEl.value||'').trim()); toast('已保存') };
+  // useMine removed
+
+  // 拖拽/选择图片
+  var imgs = [];
+  fileEl.onchange = async function(e){ addFiles(e.target.files) };
+  ['dragenter','dragover'].forEach(function(evt){ dropEl.addEventListener(evt, function(e){ e.preventDefault(); dropEl.style.borderColor='var(--orange)' }) });
+  ['dragleave','drop'].forEach(function(evt){ dropEl.addEventListener(evt, function(e){ e.preventDefault(); dropEl.style.borderColor='rgba(255,154,0,.6)' }) });
+  dropEl.addEventListener('drop', function(e){ addFiles(e.dataTransfer.files) });
+
+  async function addFiles(fileList){
+    var files = Array.prototype.filter.call(fileList||[], function(f){ return /^image\//.test(f.type) });
+    if (!files.length) return;
+    if (imgs.length + files.length > 8) { toast('最多只能选择 8 张图片', true); return }
+    for (var i=0;i<files.length;i++){ var f=files[i]; var dataURL = await fileToDataURL(f); imgs.push({name:f.name, dataURL:dataURL}) }
+    renderThumbs();
+  }
+
+  function renderThumbs(){
+    thumbsEl.innerHTML = '';
+    imgs.forEach(function(it, idx){
+      var div = document.createElement('div'); div.className='thumb';
+      var im = new Image(); im.src = it.dataURL; div.appendChild(im);
+      var btn = document.createElement('button'); btn.className='x'; btn.textContent='移除'; btn.onclick=function(){ imgs.splice(idx,1); renderThumbs() };
+      div.appendChild(btn);
+      thumbsEl.appendChild(div);
+    });
+  }
+
+  // ====== 日志系统（首次隐藏，写入后才显示） ======
+  var logs = []; // {ts, kind, msg}
+  function addLog(msg, kind){
+    logs.push({ ts: new Date(), kind: kind || 'info', msg: String(msg||'') });
+    if (logPanel && logPanel.style.display === 'none') logPanel.style.display = 'block';
+    renderLogs();
+  }
+  function iconFor(kind){
+    if (kind === 'noimage' || kind === 'error') return {sym:'❌', cls:'ico-err'};
+    if (kind === 'ok') return {sym:'✅', cls:'ico-ok'};
+    if (kind === 'warn') return {sym:'⚠️', cls:'ico-warn'};
+    return {sym:'ℹ️', cls:'ico-info'};
+  }
+  function renderLogs(){
+    logListEl.innerHTML = '';
+    logs.forEach(function(it){
+      var row = document.createElement('div'); row.className='log-item';
+      var ico = document.createElement('div'); var meta = iconFor(it.kind); ico.className='log-ico ' + meta.cls; ico.textContent = meta.sym;
+      var txt = document.createElement('div'); txt.className='log-text'; txt.textContent = it.msg;
+      row.appendChild(ico); row.appendChild(txt);
+      logListEl.appendChild(row);
+    });
+  }
+
+  // 结果运行集合（最新在前）
+  var runs = []; // [{ts, images: [url], prompt, title}]
+  function addRun(urls, prompt){
+    var ts = new Date(); var title = '第' + (runs.length+1) + '次生成 · ' + urls.length + '张 · ' + ts.toLocaleString();
+    var run = { ts: ts, title: title, images: urls.slice(), prompt: prompt };
+    runs.unshift(run); // 新的在顶部
+    renderRuns();
+  }
+
+  
+// ---- Added: direct image downloader ----
+async function downloadImage(url, filename){
+  try{
+    if (/^(data|blob):/i.test(url)) {
+      var a = document.createElement('a');
+      a.href = url; a.download = filename || '';
+      document.body.appendChild(a); a.click(); a.remove();
+      return;
+    }
+    const res = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    var a2 = document.createElement('a');
+    a2.href = blobUrl; a2.download = filename || '';
+    document.body.appendChild(a2); a2.click(); a2.remove();
+    setTimeout(function(){ URL.revokeObjectURL(blobUrl); }, 1000);
+  }catch(err){
+    try{ toast && toast('直链下载受跨域限制，已在新页打开原图，可右键另存。', true); }catch(_e){}
+    window.open(url, '_blank', 'noopener');
+  }
+}
+// ---- /Added ----
+function renderRuns(){
+    runsEl.innerHTML = '';
+    for (var ridx = 0; ridx < runs.length; ridx++){
+      (function(ridx){
+        var run = runs[ridx];
+        var card = document.createElement('div'); card.className='run-card';
+        var head = document.createElement('div'); head.className='run-head';
+        var left = document.createElement('div'); left.textContent = run.title;
+        head.appendChild(left);
+        card.appendChild(head);
+
+        var grid = document.createElement('div'); grid.className='run-thumbs';
+        for (var i=0;i<run.images.length;i++){
+          (function(i){
+            var url = run.images[i];
+            var box = document.createElement('div'); box.className='shot';
+            var img = new Image(); img.src = url; box.appendChild(img);
+            var bar = document.createElement('div'); bar.className='bar';
+            var a = document.createElement('button'); a.className='btn'; a.textContent='⬇️ 直接下载'; a.onclick = function(ev){ ev.stopPropagation(); downloadImage(url, 'nano-banana-' + (ridx+1) + '-' + (i+1) + '.png'); };
+            var span = document.createElement('span'); span.className='small'; span.textContent='第 ' + (i+1) + ' 张';
+            bar.appendChild(a); bar.appendChild(span);
+            box.appendChild(bar);
+            box.onclick = function(){ openLightbox(ridx, i) };
+            grid.appendChild(box);
+          })(i);
+        }
+        card.appendChild(grid);
+        runsEl.appendChild(card);
+      })(ridx);
+    }
+  }
+
+  // === 全局列表（跨批次翻页，按最新在前的顺序） ===
+  function totalImages(){
+    var n=0; for (var r=0;r<runs.length;r++){ n += runs[r].images.length } return n;
+  }
+  function toGlobalIndex(runIdx, imgIdx){
+    var idx=0; for (var r=0;r<runs.length;r++){ if (r===runIdx){ idx += imgIdx; break } idx += runs[r].images.length } return idx;
+  }
+  function fromGlobalIndex(g){
+    var rem=g; for (var r=0;r<runs.length;r++){ var len=runs[r].images.length; if (rem < len) return {run:r, idx:rem}; rem -= len } return {run:-1, idx:-1};
+  }
+
+  var gIndex = -1; // 全局索引
+  function openLightbox(runIndex, imgIndex){
+    gIndex = toGlobalIndex(runIndex, imgIndex);
+    updateLightbox();
+    lightbox.classList.add('show');
+  }
+  function updateLightbox(){
+    var total = totalImages();
+    if (gIndex<0 || total===0) return;
+    if (gIndex >= total) gIndex = total - 1;
+    if (gIndex < 0) gIndex = 0;
+    var pos = fromGlobalIndex(gIndex);
+    var run = runs[pos.run]; var url = run.images[pos.idx];
+    lbImg.src = url;
+    lbCaption.textContent = run.title + ' · 第 ' + (pos.idx+1) + ' / ' + run.images.length + ' 张' + ' ｜ 全部 ' + total + ' 张 · 第 ' + (gIndex+1);
+    lbDownload.href = url;
+    lbDownload.download = 'nano-banana-' + (pos.run+1) + '-' + (pos.idx+1) + '.png';
+  }
+  document.getElementById('lbPrev').onclick = function(){
+    var total = totalImages(); if (total===0) return;
+    gIndex = (gIndex - 1 + total) % total; updateLightbox();
+  };
+  document.getElementById('lbNext').onclick = function(){
+    var total = totalImages(); if (total===0) return;
+    gIndex = (gIndex + 1) % total; updateLightbox();
+  };
+  document.getElementById('lbClose').onclick = function(){ lightbox.classList.remove('show') };
+  lightbox.addEventListener('click', function(e){ if (e.target === lightbox) lightbox.classList.remove('show') });
+  document.addEventListener('keydown', function(e){
+    if (!lightbox.classList.contains('show')) return;
+    if (e.key==='Escape') document.getElementById('lbClose').onclick();
+    if (e.key==='ArrowLeft') document.getElementById('lbPrev').onclick();
+    if (e.key==='ArrowRight') document.getElementById('lbNext').onclick();
+  });
+
+  // ====== 生成主流程 ======
+  goBtn.onclick = async function(){
+    try{
+      var userPrompt = (promptEl.value||'').trim();
+      if(!userPrompt){ toast('请先输入提示词', true); return }
+      // images optional: removed min-1 validation
+      setBusy(true, '准备中…');
+
+      // 选择 Key（必须填写自己的 Key）
+      var key = (userKeyEl.value||'').trim();
+      if(!key){
+        setBusy(false);
+        toast('必须先在“第3步”填写你自己的 Key 才能使用。', true);
+        try{ document.getElementById('keyDetails').open = true }catch(e){}
+        return;
+      }
+
+      // 自动补充“务必返回图片”
+      var promptApi = userPrompt;
+      if (promptApi.indexOf('务必返回图片') === -1) {
+        if (!/[。.!?？]$/.test(promptApi)) promptApi += '。';
+        promptApi += '务必返回图片';
+      }
+
+      var content = [{type:'text', text: promptApi}];
+      for(var i=0;i<imgs.length;i++){ var im = imgs[i]; content.push({type:'image_url', image_url:{url: im.dataURL}}) }
+      var body = { model: MODEL, messages: [{ role: 'user', content: content }] };
+
+      // 头设置（仅在 http/https 下发送 Referer）
+      var headers = { 'Authorization': 'Bearer ' + key, 'X-Title': 'nano banana H5', 'Content-Type':'application/json' };
+      if (/^https?:$/.test(location.protocol)) headers['HTTP-Referer'] = location.origin;
+
+      setBusy(true, '请求中…');
+      var res = await fetch(ENDPOINT, { method:'POST', headers: headers, body: JSON.stringify(body) });
+      var text = await res.text();
+      var json = null; try{ json = JSON.parse(text) } catch(e){}
+      if (!res.ok) {
+        addLog('HTTP ' + res.status + ' ' + res.statusText, 'error');
+        addLog('错误详情：\n' + (json ? JSON.stringify(json, null, 2) : text), 'error');
+        throw new Error((json && json.error && json.error.message) || 'Provider returned error');
+      }
+
+      var msg = (json && json.choices && json.choices[0] && json.choices[0].message) || {};
+      var images = (msg && msg.images && Array.isArray(msg.images)) ? msg.images.slice() : [];
+      if (images.length === 0) {
+        var c = (msg.content||'')+'';
+        var datas = c.match(/data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=\-_]+/g) || [];
+        for (var d=0; d<datas.length; d++){ images.push({type:'image_url', image_url:{url: datas[d]}}) }
+      }
+      
+if (images.length === 0) {
+  // 尝试从 content（字符串或数组）中提取图片 URL
+  let texts = [];
+  if (typeof msg.content === 'string') { texts.push(msg.content); }
+  else if (Array.isArray(msg.content)) {
+    for (const b of msg.content) {
+      if (b && b.type === 'text' && typeof b.text === 'string') texts.push(b.text);
+      else if (typeof b === 'string') texts.push(b);
+    }
+  }
+  let found = [];
+  for (const t of texts) { found.push(...parseImageUrlsFromText(t)); }
+  // 去重
+  found = Array.from(new Set(found));
+  if (found.length) {
+    images = found.map(u => ({type:'image_url', image_url:{url:u}}));
+  }
+}
+if (images.length === 0) {
+  addLog('模型未返回图片，原文：\n' + ( (typeof msg.content==='string') ? msg.content : JSON.stringify(msg.content||'(空)') ), 'noimage');
+  setBusy(false, '完成（无图）'); toast('没有检测到返回图片（images[] 为空）', true);
+  return;
+}
+
+
+      var urls = images.map(function(im){ return (im && im.image_url && im.image_url.url) || '' }).filter(function(u){ return !!u });
+      addRun(urls, userPrompt);
+      addLog('本次生成 ' + urls.length + ' 张，已加入结果区（新结果在最上方）', 'ok');
+      setBusy(false, '完成');
+
+    } catch(err){
+      console.error(err);
+      setBusy(false, '失败');
+      addLog((err && err.message ? err.message : String(err)), 'error');
+      toast(err && err.message ? err.message : String(err), true);
+    }
+  }
+
+  // ====== 工具函数 ======
+  function setBusy(busy, msg){
+    if (busy){ const b=goBtn; b.setAttribute('disabled','disabled'); spinEl.classList.add('show'); }
+    else { goBtn.removeAttribute('disabled'); spinEl.classList.remove('show'); }
+    status(msg || (busy ? '处理中…' : '就绪'));
+  }
+  function toast(msg, bad){ if(bad===void 0) bad=false; statusEl.textContent = msg; statusEl.style.color = bad ? '#b30000' : ''; setTimeout(function(){ status('就绪') }, 2000) }
+  function status(s){ statusEl.textContent=s }
+  function fileToDataURL(file){ return new Promise(function(resolve,reject){ var r=new FileReader(); r.onload=function(){resolve(r.result)}; r.onerror=function(e){reject(e)}; r.readAsDataURL(file) }) }
+  function base64UrlToBytes(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var bin=atob(s); var out=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i); return out }
+  function strToBytes(s){ return new TextEncoder().encode(s) }
+  async function sha256Bytes(bytes){ var b=await crypto.subtle.digest('SHA-256', bytes); return new Uint8Array(b) }
+  async function sha1Hex(bytes){ var b=await crypto.subtle.digest('SHA-1', bytes); var arr=[].slice.call(new Uint8Array(b)); return arr.map(function(x){return x.toString(16).padStart(2,'0')}).join('') }
+  function xorBytes(a, mask){ var out=new Uint8Array(a.length); for(var i=0;i<a.length;i++) out[i]=a[i]^mask[i%mask.length]; return out }
+})();</script>
+</body>
+</html>
