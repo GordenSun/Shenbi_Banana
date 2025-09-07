@@ -201,6 +201,21 @@ html{ -webkit-text-size-adjust: 100%; }
 #__mini_toast__.show{ opacity:1; }
 </style>
 
+
+<!-- == Injected: Allow Long-Press Save CSS == -->
+<style>
+/* Ensure images and containers allow iOS/Android long-press callout */
+#lbImg, .lb-main img {
+  -webkit-touch-callout: default !important;
+  pointer-events: auto !important;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#lightbox, .lb-inner, .lb-main {
+  -webkit-touch-callout: default !important;
+}
+</style>
+
 </head>
 <body>
   <header>
@@ -855,6 +870,115 @@ if (images.length === 0) {
 
   // Expose for debug
   window.fitLightbox = fitLightbox;
+})();
+</script>
+
+
+<!-- == Injected: Enable Long-Press Context Menu JS == -->
+<script>
+(function(){
+  function isMobile(){
+    if (navigator.userAgentData && 'mobile' in navigator.userAgentData) return navigator.userAgentData.mobile;
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  }
+  function byId(id){ return document.getElementById(id); }
+
+  function enableLongPressMenu(){
+    var lb = byId('lightbox');
+    var img = byId('lbImg') || (lb ? lb.querySelector('.lb-main img') : null);
+    var inner = lb ? lb.querySelector('.lb-inner') : null;
+    var main  = lb ? lb.querySelector('.lb-main')  : null;
+    var candidates = [document.body, lb, inner, main, img];
+    candidates.forEach(function(el){
+      if(!el) return;
+      try{
+        el.oncontextmenu = null;
+        el.removeAttribute && el.removeAttribute('oncontextmenu');
+      }catch(e){}
+    });
+    // Ensure context menu can open on the image itself
+    document.addEventListener('contextmenu', function(e){
+      var t = e.target;
+      if(!t) return;
+      var allow = (t.id === 'lbImg') || (t.closest && t.closest('.lb-main img'));
+      if(allow){
+        // do NOT preventDefault; just stop propagation so other handlers can't block it
+        e.stopPropagation();
+      }
+    }, true);
+
+    // Avoid libraries grabbing touch events on the image path
+    ['touchstart','touchmove','touchend','touchcancel'].forEach(function(type){
+      document.addEventListener(type, function(e){
+        var t = e.target;
+        if(!t) return;
+        var allow = (t.id === 'lbImg') || (t.closest && t.closest('.lb-main img'));
+        if(allow){
+          // Keep default so long-press is detected; stop propagation to avoid global preventDefault
+          e.stopPropagation();
+        }
+      }, true);
+    });
+  }
+
+  // Strengthen mobile download button: fall back to navigating to the image page (so long-press works) instead of popup
+  function strengthenMobileDownload(){
+    var btn = byId('lbDownload');
+    if(!btn || !isMobile()) return;
+
+    // Remove target to avoid blocked popups; navigation in same tab is more reliable on iOS
+    try{ btn.removeAttribute('target'); }catch(e){}
+    btn.addEventListener('click', async function(e){
+      try{
+        e.preventDefault(); e.stopPropagation();
+        if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+        var lb = byId('lightbox');
+        var img = byId('lbImg') || (lb ? lb.querySelector('.lb-main img') : null);
+        var src = img ? (img.currentSrc || img.src) : (btn.getAttribute('href') || '');
+        if(!src){ location.href = btn.getAttribute('href') || '#'; return; }
+
+        async function tryShareFile(){
+          // Try Web Share with File first
+          try{
+            const res = await fetch(src, {mode:'cors', credentials:'omit'});
+            if(!res.ok) throw new Error('fetch failed: '+res.status);
+            const blob = await res.blob();
+            const file = new File([blob], 'image' + (blob.type && blob.type.indexOf('/')>0 ? '.'+blob.type.split('/')[1] : '.jpg'), {type: blob.type || 'image/jpeg'});
+            if(navigator.canShare && navigator.canShare({files:[file]}) && typeof navigator.share === 'function'){
+              await navigator.share({files:[file], title: document.title || '图片', text: '保存到相册'});
+              return true;
+            }
+          }catch(err){ /* ignore; will fallback */ }
+          return false;
+        }
+
+        var ok = await tryShareFile();
+        if(ok) return;
+
+        // Try share URL (some systems allow saving from share sheet)
+        if(typeof navigator.share === 'function'){
+          try{ await navigator.share({ url: src, title: document.title || '图片' }); return; }catch(err){}
+        }
+
+        // Final fallback: navigate current tab to the image resource so user can long-press save
+        location.href = src;
+      }catch(err){
+        var href = btn.getAttribute('href');
+        if(href){ location.href = href; }
+      }
+    }, true);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      enableLongPressMenu();
+      strengthenMobileDownload();
+    });
+  }else{
+    enableLongPressMenu();
+    strengthenMobileDownload();
+  }
 })();
 </script>
 
