@@ -135,144 +135,36 @@
     .closebtn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 12px;border-radius:10px;border:1px solid rgba(79,32,13,.3);background:#fff;color:#4F200D;cursor:pointer}
   </style>
 
-<!-- == Injected fixes: lightbox + mobile input zoom == -->
-<style>
-/* Lightbox container sizing */
-.lb-inner{
-  max-width:92vw;
-  max-height:86vh;
-  overflow:hidden;
-}
-.lb-main{
-  flex:1 1 auto;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-width:0;
-  min-height:0;
-}
-/* Make sure image always fits inside container without overflow */
-.lb-main img, #lbImg{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  image-orientation: from-image;
-}
-/* Zoomed/original-size mode (toggled via dblclick) */
-.lb-main.zoom{
-  overflow:auto;
-  cursor:grab;
-}
-.lb-main.zoom img, .lb-main.zoom #lbImg{
-  width:auto;
-  height:auto;
-  max-width:none;
-  max-height:none;
-}
-
-/* Small screen tweaks */
-@media (max-width: 600px){
-  .lb-inner{ max-width:96vw; max-height:92vh; }
-}
-
-/* Prevent iOS Safari focus-zoom by ensuring >=16px font size */
-@media (max-width: 768px){
-  input, textarea, select, button{
-    font-size:16px !important;
-  }
-}
-
-/* Also avoid unexpected text auto-scaling */
-html{ -webkit-text-size-adjust: 100%; }
-</style>
-
-
-<!-- == Injected FIT CSS v2: lightbox full containment == -->
-<style>
-/* Make lightbox content use grid so image area always gets the remaining height */
-.lb-inner{
-  display:grid !important;
-  grid-template-rows: minmax(0, 1fr) auto; /* image area | toolbar */
-  max-width:92vw;
-  max-height:92vh;
-  overflow:hidden;
-}
-
-/* Image area centers content and can shrink freely */
-.lb-main{
-  min-width:0;
-  min-height:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-/* Image must always fully fit within lb-main without cropping */
-#lbImg,
-.lb-main img{
-  max-width:100%;
-  max-height:100%;
-  width:auto;
-  height:auto;
-  object-fit:contain;
-  image-orientation: from-image;
-}
-
-/* Zoom/original-size mode: keep but override fit rules when active */
-.lb-main.zoom{
-  overflow:auto;
-  cursor:grab;
-}
-.lb-main.zoom #lbImg{
-  max-width:none;
-  max-height:none;
-  width:auto;
-  height:auto;
-}
-
-/* Small screen tweaks */
-@media (max-width: 600px){
-  .lb-inner{ max-width:96vw; max-height:96vh; }
-}
-
-/* Prevent iOS Safari focus zoom by ensuring >=16px font size */
-@media (max-width: 768px){
-  input, textarea, select, button{ font-size:16px !important; }
-}
-html{ -webkit-text-size-adjust: 100%; }
-</style>
-
-
 <!-- == Injected FIT CSS v3 == -->
 <style>
 :root{ --lb-edge: 12px; --lb-bar-h: 0px; }
 
-/* Make overlay content center the image area and never crop */
+/* Center overlay content */
 #lightbox.show, #lightbox.visible{
   display: flex !important;
   align-items: center;
   justify-content: center;
 }
 
-/* Inner container can scroll caption if needed, but image area must remain within viewport */
+/* Container never exceeds viewport; grid rows = image area | toolbar/caption */
 .lb-inner{
   max-width: calc(100vw - 2*var(--lb-edge));
   max-height: calc(100vh - 2*var(--lb-edge));
   overflow: hidden;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto; /* image area | toolbar/caption */
+  grid-template-rows: minmax(0, 1fr) auto;
   row-gap: 8px;
   box-sizing: border-box;
 }
 
-/* Image area */
+/* Image area centers content and can shrink freely */
 .lb-main{
   min-width: 0; min-height: 0;
   display: flex; align-items: center; justify-content: center;
-  height: calc(100vh - 2*var(--lb-edge) - var(--lb-bar-h) - 8px); /* dynamically updated var(--lb-bar-h) */
+  height: calc(100vh - 2*var(--lb-edge) - var(--lb-bar-h) - 8px);
 }
 
-/* Image must fully fit */
+/* Image fully fits without cropping (portrait/landscape) */
 #lbImg, .lb-main img{
   width: auto !important;
   height: auto !important;
@@ -282,17 +174,31 @@ html{ -webkit-text-size-adjust: 100%; }
   image-orientation: from-image;
 }
 
-/* Zoom/original-size mode (kept but off by default) */
+/* Optional zoom mode via dblclick (kept) */
 .lb-main.zoom{ overflow:auto; cursor: grab; }
 .lb-main.zoom #lbImg, .lb-main.zoom img{
   max-width:none; max-height:none; width:auto; height:auto;
 }
 
-/* Mobile text-size & input focus zoom prevention */
+/* Prevent iOS focus zoom */
 @media (max-width: 768px){
   input, textarea, select, button{ font-size:16px !important; }
 }
 html{ -webkit-text-size-adjust: 100%; }
+
+/* Tiny toast */
+#__mini_toast__{
+  position: fixed;
+  left: 50%; bottom: 8%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.75);
+  color:#fff; font-size:14px; line-height:1.2;
+  padding:10px 14px; border-radius:12px;
+  z-index: 99999; opacity:0; pointer-events:none;
+  transition: opacity .22s ease;
+  max-width: 80vw; text-align: center;
+}
+#__mini_toast__.show{ opacity:1; }
 </style>
 
 </head>
@@ -747,92 +653,6 @@ if (images.length === 0) {
   function xorBytes(a, mask){ var out=new Uint8Array(a.length); for(var i=0;i<a.length;i++) out[i]=a[i]^mask[i%mask.length]; return out }
 })();</script>
 
-<!-- == Injected JS: lightbox dblclick to toggle zoom == -->
-<script>
-(function(){
-  try{
-    var lbMain = document.querySelector('.lb-main');
-    var lbImg  = document.getElementById('lbImg') || (lbMain ? lbMain.querySelector('img') : null);
-    if(lbMain && lbImg){
-      lbImg.addEventListener('dblclick', function(e){
-        e.stopPropagation();
-        lbMain.classList.toggle('zoom');
-      }, {passive:true});
-    }
-  }catch(e){ /* no-op */ }
-})();
-</script>
-
-
-<!-- == Injected FIT JS v2: compute available area and scale image == -->
-<script>
-(function(){
-  function fitLightbox(){
-    try{
-      var lightbox = document.getElementById('lightbox');
-      if(!lightbox || !lightbox.classList.contains('show')) return;
-      var inner = lightbox.querySelector('.lb-inner');
-      var main  = lightbox.querySelector('.lb-main');
-      var bar   = lightbox.querySelector('.lb-bar');
-      var img   = document.getElementById('lbImg') || (main ? main.querySelector('img') : null);
-      if(!inner || !main || !img) return;
-      if(main.classList.contains('zoom')) return; // don't fight zoom mode
-
-      // Compute vertical gap between rows (grid gap or flex gap fallback)
-      var cs = getComputedStyle(inner);
-      var gapY = 0;
-      var gap = cs.rowGap || cs.gap;
-      if(gap && gap.endsWith('px')) gapY = parseFloat(gap) || 0;
-
-      // Available dimensions for the image area
-      var availW = inner.clientWidth;
-      var availH = inner.clientHeight - (bar ? bar.offsetHeight : 0) - gapY;
-      if(availH < 0) availH = 0;
-
-      // Set the lb-main height precisely so the image can fully contain
-      main.style.height = availH + 'px';
-
-      // Reset any previous overrides then constrain via max-* to contain
-      img.style.width = 'auto';
-      img.style.height = 'auto';
-      img.style.maxWidth = availW + 'px';
-      img.style.maxHeight = availH + 'px';
-    }catch(e){ /* no-op */ }
-  }
-
-  // Hook into existing lightbox update/open
-  var _updateLightbox = null;
-  try{
-    _updateLightbox = window.updateLightbox;
-  }catch(e){}
-  // If we can, monkey-patch updateLightbox to call fit after load
-  if(typeof _updateLightbox === 'function'){
-    window.updateLightbox = function(){
-      _updateLightbox();
-      // After src change, wait for load to get natural size then fit
-      var img = document.getElementById('lbImg');
-      if(img){
-        var once = function(){ img.removeEventListener('load', once); fitLightbox(); };
-        img.addEventListener('load', once, {once:true});
-      }
-      // Also do a slight delay fit as a fallback
-      setTimeout(fitLightbox, 50);
-    };
-  }else{
-    // Fallback: still attempt to fit on common events
-    var img = document.getElementById('lbImg');
-    if(img){ img.addEventListener('load', fitLightbox); }
-    document.addEventListener('DOMContentLoaded', fitLightbox);
-  }
-
-  window.addEventListener('resize', fitLightbox);
-  window.addEventListener('orientationchange', fitLightbox);
-  // Expose for debugging
-  window.fitLightbox = fitLightbox;
-})();
-</script>
-
-
 <!-- == Injected FIT JS v3 == -->
 <script>
 (function(){
@@ -844,15 +664,28 @@ if (images.length === 0) {
     var y = (parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0)+(parseFloat(cs.borderTopWidth)||0)+(parseFloat(cs.borderBottomWidth)||0);
     return {x:x, y:y};
   }
-
   function setCSSVar(root, name, valPx){
-    if(root && root.style) root.style.setProperty(name, Math.max(0, valPx) + 'px');
-    else document.documentElement.style.setProperty(name, Math.max(0, valPx) + 'px');
+    (root && root.style ? root : document.documentElement).style.setProperty(name, Math.max(0, valPx) + 'px');
+  }
+  function byId(id){ return document.getElementById(id); }
+  function showToast(msg){
+    try{
+      var t = byId('__mini_toast__');
+      if(!t){ t = document.createElement('div'); t.id='__mini_toast__'; document.body.appendChild(t); }
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(showToast.tid);
+      showToast.tid = setTimeout(function(){ t.classList.remove('show'); }, 1800);
+    }catch(e){}
+  }
+  function isMobile(){
+    if (navigator.userAgentData && 'mobile' in navigator.userAgentData) return navigator.userAgentData.mobile;
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
   }
 
   function fitLightbox(force){
     try{
-      var lb = document.getElementById('lightbox');
+      var lb = byId('lightbox');
       if(!lb) return;
       var shown = lb.classList.contains('show') || lb.classList.contains('visible') || lb.style.display !== 'none';
       if(!shown && !force) return;
@@ -860,82 +693,167 @@ if (images.length === 0) {
       var inner = lb.querySelector('.lb-inner');
       var main  = lb.querySelector('.lb-main');
       var bar   = lb.querySelector('.lb-bar, .lb-toolbar, .lb-caption');
-      var img   = document.getElementById('lbImg') || (main ? main.querySelector('img') : null);
+      var img   = byId('lbImg') || (main ? main.querySelector('img') : null);
       if(!inner || !main || !img) return;
-      if(main.classList.contains('zoom')) return; // honor zoom mode
+      if(main.classList.contains('zoom')) return; // don't constrain in zoom mode
 
-      // Measure bar height (toolbar/caption) + inner paddings
+      // Measure bar height and inner paddings
       var barH = bar ? bar.getBoundingClientRect().height : 0;
       var padI = paddings(inner);
-
-      // Set CSS var for bar height so CSS constraints can use viewport - bar
       setCSSVar(lb, '--lb-bar-h', barH);
 
-      // Compute available area precisely
-      var edge = 12; // matches --lb-edge
+      // Compute available area
+      var edge = 12;
       var availW = window.innerWidth  - 2*edge - padI.x;
       var availH = window.innerHeight - 2*edge - padI.y - barH - 8; // 8px row-gap
+      if(availW < 0) availW = 0;
+      if(availH < 0) availH = 0;
 
-      // Apply sizing
-      main.style.height = Math.max(0, availH) + 'px';
+      main.style.height = availH + 'px';
 
+      // Image contain
       img.style.width = 'auto';
       img.style.height = 'auto';
-      img.style.maxWidth  = Math.max(0, availW) + 'px';
-      img.style.maxHeight = Math.max(0, availH) + 'px';
-    }catch(e){ /* noop */ }
+      img.style.maxWidth  = availW + 'px';
+      img.style.maxHeight = availH + 'px';
+    }catch(e){}
   }
 
-  // Observe size changes to re-fit
-  var ro = new ResizeObserver(function(){ fitLightbox(); });
-  function initObservers(){
-    var lb = document.getElementById('lightbox');
-    if(!lb) return;
-    var inner = lb.querySelector('.lb-inner');
-    if(inner) ro.observe(inner);
+  // dblclick toggle zoom (optional)
+  function attachDblclick(){
+    try{
+      var lb = byId('lightbox');
+      var main = lb ? lb.querySelector('.lb-main') : null;
+      var img  = byId('lbImg') || (main ? main.querySelector('img') : null);
+      if(main && img){
+        img.addEventListener('dblclick', function(e){
+          e.stopPropagation();
+          main.classList.toggle('zoom');
+          if(!main.classList.contains('zoom')){
+            // when exiting zoom, refit
+            setTimeout(function(){ fitLightbox(true); }, 20);
+          }
+        }, {passive:true});
+      }
+    }catch(e){}
   }
 
-  function hookImageLoad(){
-    var lb = document.getElementById('lightbox');
-    if(!lb) return;
-    var img = lb.querySelector('#lbImg') || lb.querySelector('.lb-main img');
-    if(img){
-      img.addEventListener('load', function(){ fitLightbox(true); }, {once:false});
-    }
+  // Web Share (save to gallery via share sheet), mobile only
+  async function srcToBlob(src){
+    const res = await fetch(src, {mode:'cors', credentials:'omit'});
+    if(!res.ok) throw new Error('fetch failed: '+res.status);
+    return await res.blob();
+  }
+  function filenameFromType(name, mime){
+    if(/\.(png|jpg|jpeg|webp|gif|bmp|heic|heif)$/i.test(name)) return name;
+    var ext = 'jpg';
+    if(mime==='image/png') ext='png';
+    else if(mime==='image/webp') ext='webp';
+    else if(mime==='image/gif') ext='gif';
+    else if(mime==='image/bmp') ext='bmp';
+    else if(mime==='image/heic') ext='heic';
+    else if(mime==='image/heif') ext='heif';
+    return (name||'image').replace(/\.+$/,'') + '.' + ext;
+  }
+  function openForLongPress(src){
+    try { window.open(src, '_blank', 'noopener'); }
+    catch(e){ location.href = src; }
+    showToast(/iPhone|iPad|iPod/i.test(navigator.userAgent)? '长按图片 → “储存图像”' : '长按图片 → “保存图片”');
+  }
+  function attachMobileDownload(){
+    var btn = byId('lbDownload');
+    if(!btn) return;
+    if(!isMobile()) return;
+
+    btn.addEventListener('click', async function(e){
+      try{
+        e.preventDefault(); e.stopPropagation();
+        if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+        var lb = byId('lightbox');
+        var img = byId('lbImg') || (lb ? lb.querySelector('.lb-main img') : null);
+        var src = img ? (img.currentSrc || img.src) : (btn.getAttribute('href') || '');
+        if(!src){ showToast('找不到图片资源'); return; }
+
+        // Try share with file
+        try{
+          var blob = await srcToBlob(src);
+          var file = new File([blob], filenameFromType((btn.getAttribute('download')||'image'), blob.type||'image/jpeg'), {type: blob.type||'image/jpeg'});
+          if(navigator.canShare && navigator.canShare({ files:[file] }) && typeof navigator.share === 'function'){
+            await navigator.share({ files: [file], title: document.title || '图片', text: '保存到相册' });
+            showToast('已打开系统分享，可选择“保存到相册”');
+            return;
+          }
+        }catch(err){
+          // CORS 或其他失败，走兜底
+          return openForLongPress(src);
+        }
+
+        // Try share URL
+        if(typeof navigator.share === 'function'){
+          try{
+            await navigator.share({ url: src, title: document.title || '图片' });
+            showToast('已打开系统分享');
+            return;
+          }catch(err){}
+        }
+
+        // Fallback
+        openForLongPress(src);
+      }catch(err){
+        var href = btn.getAttribute('href'); 
+        if(href){ openForLongPress(href); }
+      }
+    }, true);
   }
 
-  // Try to patch common open/update functions
+  // Hook into known functions if present to fit after open/update
   try{
     var oldOpen = window.openLightbox;
     if(typeof oldOpen === 'function'){
       window.openLightbox = function(){
         oldOpen.apply(this, arguments);
-        setTimeout(function(){ hookImageLoad(); fitLightbox(true); }, 30);
+        setTimeout(function(){ attachDblclick(); fitLightbox(true); }, 30);
       };
     }
   }catch(e){}
-
   try{
     var oldUpdate = window.updateLightbox;
     if(typeof oldUpdate === 'function'){
       window.updateLightbox = function(){
         oldUpdate.apply(this, arguments);
-        setTimeout(function(){ hookImageLoad(); fitLightbox(true); }, 30);
+        setTimeout(function(){ attachDblclick(); fitLightbox(true); }, 30);
       };
     }
   }catch(e){}
 
-  // Global listeners
+  // Observers & global listeners
+  var ro = new ResizeObserver(function(){ fitLightbox(); });
+  function initObservers(){
+    var lb = byId('lightbox');
+    if(!lb) return;
+    var inner = lb.querySelector('.lb-inner');
+    if(inner) ro.observe(inner);
+  }
+  function hookImageLoad(){
+    var lb = byId('lightbox');
+    var img = lb ? (byId('lbImg') || lb.querySelector('.lb-main img')) : null;
+    if(img){ img.addEventListener('load', function(){ fitLightbox(true); }); }
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){
+      initObservers(); hookImageLoad(); attachDblclick(); attachMobileDownload();
+      setTimeout(function(){ fitLightbox(true); }, 60);
+    });
+  }else{
+    initObservers(); hookImageLoad(); attachDblclick(); attachMobileDownload();
+    setTimeout(function(){ fitLightbox(true); }, 60);
+  }
   window.addEventListener('resize', function(){ fitLightbox(); });
   window.addEventListener('orientationchange', function(){ fitLightbox(true); });
-  document.addEventListener('DOMContentLoaded', function(){
-    initObservers();
-    hookImageLoad();
-    // First fit in case lightbox already visible
-    setTimeout(function(){ fitLightbox(true); }, 50);
-  });
 
-  // Expose
+  // Expose for debug
   window.fitLightbox = fitLightbox;
 })();
 </script>
