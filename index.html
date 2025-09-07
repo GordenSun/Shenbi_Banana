@@ -463,9 +463,37 @@ function pickKey() {
   }
 
   
-// ---- Added: direct image downloader ----
+// ---- Added: direct image downloader (mobile share first) ----
 async function downloadImage(url, filename){
   try{
+    // Detect mobile browsers
+    var isMobile = (navigator.userAgentData && 'mobile' in navigator.userAgentData) ? navigator.userAgentData.mobile
+                  : /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+
+    if(isMobile){
+      // Try Web Share with File for best "save to gallery" UX
+      try{
+        const res = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'no-store' });
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        const blob = await res.blob();
+        var ext = (blob.type && blob.type.indexOf('/')>0) ? ('.' + blob.type.split('/')[1]) : '.jpg';
+        var safeName = (filename || 'image').replace(/\.+$/, '');
+        const file = new File([blob], safeName + ext, { type: blob.type || 'image/jpeg' });
+        if(navigator.canShare && navigator.canShare({ files:[file] }) && typeof navigator.share === 'function'){
+          await navigator.share({ files: [file], title: document.title || '图片', text: '保存到相册' });
+          try{ toast && toast('已打开系统分享，可选择“保存到相册”'); }catch(_e){}
+          return;
+        }
+      }catch(_err){
+        // ignore and fallback
+      }
+      // Fallback on mobile: navigate to the image itself so users can long-press save
+      try{ toast && toast('长按图片可保存到相册'); }catch(_e){}
+      location.href = url;
+      return;
+    }
+
+    // Desktop: keep anchor download (same as原逻辑)
     if (/^(data|blob):/i.test(url)) {
       var a = document.createElement('a');
       a.href = url; a.download = filename || '';
@@ -481,8 +509,8 @@ async function downloadImage(url, filename){
     document.body.appendChild(a2); a2.click(); a2.remove();
     setTimeout(function(){ URL.revokeObjectURL(blobUrl); }, 1000);
   }catch(err){
-    try{ toast && toast('直链下载受跨域限制，已在新页打开原图，可右键另存。', true); }catch(_e){}
-    window.open(url, '_blank', 'noopener');
+    try{ toast && toast('下载受限制，已打开原图，可右键/长按保存。', true); }catch(_e){}
+    try{ window.open(url, '_blank', 'noopener'); }catch(e){ location.href = url; }
   }
 }
 // ---- /Added ----
