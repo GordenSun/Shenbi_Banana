@@ -186,6 +186,62 @@
 html{ -webkit-text-size-adjust: 100%; }
 </style>
 
+
+<!-- == Injected FIT CSS v2: lightbox full containment == -->
+<style>
+/* Make lightbox content use grid so image area always gets the remaining height */
+.lb-inner{
+  display:grid !important;
+  grid-template-rows: minmax(0, 1fr) auto; /* image area | toolbar */
+  max-width:92vw;
+  max-height:92vh;
+  overflow:hidden;
+}
+
+/* Image area centers content and can shrink freely */
+.lb-main{
+  min-width:0;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Image must always fully fit within lb-main without cropping */
+#lbImg,
+.lb-main img{
+  max-width:100%;
+  max-height:100%;
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  image-orientation: from-image;
+}
+
+/* Zoom/original-size mode: keep but override fit rules when active */
+.lb-main.zoom{
+  overflow:auto;
+  cursor:grab;
+}
+.lb-main.zoom #lbImg{
+  max-width:none;
+  max-height:none;
+  width:auto;
+  height:auto;
+}
+
+/* Small screen tweaks */
+@media (max-width: 600px){
+  .lb-inner{ max-width:96vw; max-height:96vh; }
+}
+
+/* Prevent iOS Safari focus zoom by ensuring >=16px font size */
+@media (max-width: 768px){
+  input, textarea, select, button{ font-size:16px !important; }
+}
+html{ -webkit-text-size-adjust: 100%; }
+</style>
+
 </head>
 <body>
   <header>
@@ -651,6 +707,75 @@ if (images.length === 0) {
       }, {passive:true});
     }
   }catch(e){ /* no-op */ }
+})();
+</script>
+
+
+<!-- == Injected FIT JS v2: compute available area and scale image == -->
+<script>
+(function(){
+  function fitLightbox(){
+    try{
+      var lightbox = document.getElementById('lightbox');
+      if(!lightbox || !lightbox.classList.contains('show')) return;
+      var inner = lightbox.querySelector('.lb-inner');
+      var main  = lightbox.querySelector('.lb-main');
+      var bar   = lightbox.querySelector('.lb-bar');
+      var img   = document.getElementById('lbImg') || (main ? main.querySelector('img') : null);
+      if(!inner || !main || !img) return;
+      if(main.classList.contains('zoom')) return; // don't fight zoom mode
+
+      // Compute vertical gap between rows (grid gap or flex gap fallback)
+      var cs = getComputedStyle(inner);
+      var gapY = 0;
+      var gap = cs.rowGap || cs.gap;
+      if(gap && gap.endsWith('px')) gapY = parseFloat(gap) || 0;
+
+      // Available dimensions for the image area
+      var availW = inner.clientWidth;
+      var availH = inner.clientHeight - (bar ? bar.offsetHeight : 0) - gapY;
+      if(availH < 0) availH = 0;
+
+      // Set the lb-main height precisely so the image can fully contain
+      main.style.height = availH + 'px';
+
+      // Reset any previous overrides then constrain via max-* to contain
+      img.style.width = 'auto';
+      img.style.height = 'auto';
+      img.style.maxWidth = availW + 'px';
+      img.style.maxHeight = availH + 'px';
+    }catch(e){ /* no-op */ }
+  }
+
+  // Hook into existing lightbox update/open
+  var _updateLightbox = null;
+  try{
+    _updateLightbox = window.updateLightbox;
+  }catch(e){}
+  // If we can, monkey-patch updateLightbox to call fit after load
+  if(typeof _updateLightbox === 'function'){
+    window.updateLightbox = function(){
+      _updateLightbox();
+      // After src change, wait for load to get natural size then fit
+      var img = document.getElementById('lbImg');
+      if(img){
+        var once = function(){ img.removeEventListener('load', once); fitLightbox(); };
+        img.addEventListener('load', once, {once:true});
+      }
+      // Also do a slight delay fit as a fallback
+      setTimeout(fitLightbox, 50);
+    };
+  }else{
+    // Fallback: still attempt to fit on common events
+    var img = document.getElementById('lbImg');
+    if(img){ img.addEventListener('load', fitLightbox); }
+    document.addEventListener('DOMContentLoaded', fitLightbox);
+  }
+
+  window.addEventListener('resize', fitLightbox);
+  window.addEventListener('orientationchange', fitLightbox);
+  // Expose for debugging
+  window.fitLightbox = fitLightbox;
 })();
 </script>
 
