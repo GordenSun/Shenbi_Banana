@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <title>神笔banana</title>
   <style>
     :root{
@@ -134,6 +134,58 @@
     .navbtn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--orange);background:#FFE389;color:#4F200D;cursor:pointer;font-weight:800}
     .closebtn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 12px;border-radius:10px;border:1px solid rgba(79,32,13,.3);background:#fff;color:#4F200D;cursor:pointer}
   </style>
+
+<!-- == Injected fixes: lightbox + mobile input zoom == -->
+<style>
+/* Lightbox container sizing */
+.lb-inner{
+  max-width:92vw;
+  max-height:86vh;
+  overflow:hidden;
+}
+.lb-main{
+  flex:1 1 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  min-height:0;
+}
+/* Make sure image always fits inside container without overflow */
+.lb-main img, #lbImg{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  image-orientation: from-image;
+}
+/* Zoomed/original-size mode (toggled via dblclick) */
+.lb-main.zoom{
+  overflow:auto;
+  cursor:grab;
+}
+.lb-main.zoom img, .lb-main.zoom #lbImg{
+  width:auto;
+  height:auto;
+  max-width:none;
+  max-height:none;
+}
+
+/* Small screen tweaks */
+@media (max-width: 600px){
+  .lb-inner{ max-width:96vw; max-height:92vh; }
+}
+
+/* Prevent iOS Safari focus-zoom by ensuring >=16px font size */
+@media (max-width: 768px){
+  input, textarea, select, button{
+    font-size:16px !important;
+  }
+}
+
+/* Also avoid unexpected text auto-scaling */
+html{ -webkit-text-size-adjust: 100%; }
+</style>
+
 </head>
 <body>
   <header>
@@ -585,5 +637,22 @@ if (images.length === 0) {
   async function sha1Hex(bytes){ var b=await crypto.subtle.digest('SHA-1', bytes); var arr=[].slice.call(new Uint8Array(b)); return arr.map(function(x){return x.toString(16).padStart(2,'0')}).join('') }
   function xorBytes(a, mask){ var out=new Uint8Array(a.length); for(var i=0;i<a.length;i++) out[i]=a[i]^mask[i%mask.length]; return out }
 })();</script>
+
+<!-- == Injected JS: lightbox dblclick to toggle zoom == -->
+<script>
+(function(){
+  try{
+    var lbMain = document.querySelector('.lb-main');
+    var lbImg  = document.getElementById('lbImg') || (lbMain ? lbMain.querySelector('img') : null);
+    if(lbMain && lbImg){
+      lbImg.addEventListener('dblclick', function(e){
+        e.stopPropagation();
+        lbMain.classList.toggle('zoom');
+      }, {passive:true});
+    }
+  }catch(e){ /* no-op */ }
+})();
+</script>
+
 </body>
 </html>
